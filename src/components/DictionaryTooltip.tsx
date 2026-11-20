@@ -9,6 +9,23 @@ interface Definition {
   example?: string;
 }
 
+interface DictionaryApiDefinition {
+  definition?: string;
+  example?: string;
+}
+
+interface DictionaryApiMeaning {
+  partOfSpeech?: string;
+  definitions?: DictionaryApiDefinition[];
+}
+
+interface DictionaryApiEntry {
+  word: string;
+  phonetic?: string;
+  phonetics?: { text?: string }[];
+  meanings?: DictionaryApiMeaning[];
+}
+
 interface DictionaryTooltipProps {
   word: string;
   position: { x: number; y: number };
@@ -39,7 +56,7 @@ export const DictionaryTooltip = ({ word, position, onClose }: DictionaryTooltip
         throw new Error("Word not found");
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as DictionaryApiEntry[];
       const entry = data[0];
       const meaning = entry.meanings?.[0];
       const def = meaning?.definitions?.[0];
@@ -51,12 +68,12 @@ export const DictionaryTooltip = ({ word, position, onClose }: DictionaryTooltip
         definition: def?.definition || "No definition available",
         example: def?.example || undefined,
       });
-    } catch (err: any) {
-      if (err.name === "AbortError") {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") {
         setError("Request timed out. Please try again.");
       } else if (err instanceof TypeError) {
         setError("Network error. Please check your connection.");
-      } else if (typeof err.message === "string") {
+      } else if (err instanceof Error && typeof err.message === "string") {
         setError(err.message);
       } else {
         setError("Something went wrong. Please try again.");
